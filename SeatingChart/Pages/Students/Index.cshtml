@@ -12,24 +12,25 @@
     <link href="https://cdn.syncfusion.com/ej2/17.1.43/material.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.syncfusion.com/ej2/17.1.43/material.css"> 
     <script src="jquery-3.7.1.min.js"></script>
-    <script src="https://cdn.syncfusion.com/ej2/17.1.43/dist/ej2.min.js"></script> 
     <link rel="stylesheet" href="http://fonts.googleapis.com/css?family=Roboto">
     <link href='https://fonts.googleapis.com/css?family=Merriweather' rel='stylesheet'>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" integrity="sha512-..." crossorigin="anonymous" />
+    <link href="https://cdn.syncfusion.com/ej2/17.1.43/material.css" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdn.syncfusion.com/ej2/17.1.43/dist/ej2.min.js"></script> 
 </head>
 <body>
      <style>
-    .wrapper { 
+    .wrapper {
         display: grid;
         grid-template-columns: repeat(@(Model.numCols), 1fr);
-        gap: 10px;  
-        @* overflow: scroll;  *@
+        gap: 5px;
         object-fit: cover;
-        @* justify-content: center; *@
     }
 
     .wrapper > div {
         border: 2px solid #222;
-        border-radius: 3px; 
+        border-radius: 3px;
         font-family: 'Merriweather', light;
     }
 
@@ -37,23 +38,28 @@
         display: flex;
         flex-direction: row;
         align-items: center;
-        justify-content: space-between;  
+        justify-content: space-between;
+        padding: 0 5px; /* Add padding here for left and right spacing */
     }
 
     .buttons {
         display: flex;
         flex-direction: column;
         align-items: center;
-        justify-content: space-between;  
-        @* box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem orange;    *@
-        font-family: 'Merriweather', light; 
-    
-
-
+        justify-content: space-between;
+        font-family: 'Merriweather', light;
     }
 
     h4 {
         text-align: center;
+    }
+
+    .firstmiddle {
+        font-size: 12px;
+    }
+
+    .last {
+        font-size: 14px;
     }
 
     .btn-primary {
@@ -61,7 +67,7 @@
         background-color: #f5822a;
         border-color: #f5822a;
     }
- </style>
+</style>
     
     @* <a class="btn btn-primary" href="/Students/SetNumColumns/?num=@(Model.numCols + 1)">Add Column</a>
     <a class="btn btn-primary" href="/Students/SetNumColumns/?num=@(Model.numCols - 1)">Remove Column</a> *@
@@ -82,10 +88,14 @@
     <div class="wrapper">  
         @foreach (var student in Model.Students) {
             <div class="item">
-                @student.FirstName @student.MiddleName @student.LastName
+                <div>
+                    <span class="firstmiddle">@student.FirstName @student.MiddleName</span>
+                    <span class="last">@student.LastName<span/>
+                </div>
+
                 <div class="buttons">
-                    <a href="/Students/Edit/?id=@student.ID&chartNum=@Model.ChartNum">Edit</a>
-                    <a href="/Students/Delete/?id=@student.ID&chartNum=@Model.ChartNum">Delete</a>
+                    <a href="/Students/Edit/?id=@student.ID"><i class="fas fa-edit"></i></a>
+            <a href="/Students/Delete/?id=@student.ID"><i class="fas fa-trash-alt"></i></a>
                 </div>
             </div>
         }
