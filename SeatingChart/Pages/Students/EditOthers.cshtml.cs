@@ -10,11 +10,11 @@ using SeatingChart.Models;
 
 namespace SeatingChart.Pages.Students
 {
-    public class CreateModel : PageModel
+    public class EditOthersModel : PageModel
     {
         private readonly SeatingChart.Data.ChartContext _context;
 
-        public CreateModel(SeatingChart.Data.ChartContext context)
+        public EditOthersModel(SeatingChart.Data.ChartContext context)
         {
             _context = context;
         }
@@ -22,34 +22,35 @@ namespace SeatingChart.Pages.Students
         [BindProperty]
         public int? ChartNum {get;set;}
 
-        public IActionResult OnGet(int? chartNum)
-        {
-            ChartNum = chartNum;
-            return Page();
-        }
-
         [BindProperty]
         public String namesInput { get; set; } = default!;
 
         [BindProperty]
         public Student Student { get; set; } = default!;
 
-        [BindProperty]
-        public int IsGrad {get;set;}
+        public IActionResult OnGet(int? chartNum)
+        {
+            ChartNum = chartNum;
+
+            return Page();
+        }
 
         public async Task<IActionResult> OnPostAsync()
         {
+            // Start by deleting the Others; to be replaced by the new others
+            _context.Others.RemoveRange(_context.Others);
             // Check if namesInput is not empty
             if (!string.IsNullOrWhiteSpace(namesInput))
             {
                 // Split the input into an array of names 
-                string[] namesArray = namesInput.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+                string[] namesArray = namesInput.Split('\n');
 
+                int ord = 0;
                 foreach (var name in namesArray)
                 {
                     var nameParts = name.Trim().Split(' ');
 
-                    var newStudent = new Student
+                    var newOther = new Other
                     {
                         FirstName = nameParts[0],
 
@@ -60,11 +61,11 @@ namespace SeatingChart.Pages.Students
                         LastName = nameParts.Length >= 2
                             ? nameParts.Last()
                             : "",
-                        isGrad = IsGrad == 1 ? true : false
-                    };
-                    Console.WriteLine(IsGrad);
-                    
-                    _context.Students.Add(newStudent);
+
+                        Order = ord
+                    };                    
+                    _context.Others.Add(newOther);
+                    ord++;
                 }
 
                 await _context.SaveChangesAsync();
@@ -75,5 +76,18 @@ namespace SeatingChart.Pages.Students
             ModelState.AddModelError("namesInput", "Please provide a list of names.");
             return Page();
         }
+
+        public string getDisplayString(){
+            string display = "";
+            foreach(Other o in _context.Others){
+                display += o.FirstName;
+                if(o.MiddleName != null && o.MiddleName.Length > 0){
+                    display += " " + o.MiddleName;
+                }
+                display += " " + o.LastName + "\n";
+            }
+            return display;
+        }
+
     }
 }

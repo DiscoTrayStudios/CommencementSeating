@@ -31,6 +31,17 @@
                 <span asp-validation-for="Student.LastName" class="text-danger"></span>
             </div>
             <div class="form-group">
+                <input type="hidden" asp-for="ChartNum" value=@Model.ChartNum />
+                <select asp-for="IsGrad">
+                    @if(Model.Student.isGrad){
+                    <option value="0">Undergraduate</option>
+                    <option value="1" selected>Graduate</option>
+                    }
+                    else{
+                    <option value="0" selected>Undergraduate</option>
+                    <option value="1">Graduate</option>
+                    }
+                </select>
                 <input type="submit" value="Save" class="btn btn-primary" />
             </div>
         </form>

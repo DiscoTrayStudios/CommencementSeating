@@ -39,7 +39,7 @@
     .wrapper { 
         width: 100%;
         display: grid;
-        grid-template-columns: repeat(@(Model.numCols + 1), @(95/Model.numCols)%);
+        grid-template-columns: repeat(@(Model.numCols), @(95/Model.numCols)%);
         gap: @(5/Model.numCols)px;  
         object-fit: cover;
     }
@@ -151,6 +151,7 @@
     <a class="btn btn-primary" asp-page="SetNumColumns" asp-route-num="@(Model.numCols + 1)" asp-route-chartNum="@(Model.ChartNum)">Add Column</a>
     <a class="btn btn-primary" asp-page="SetNumColumns" asp-route-num="@(Model.numCols - 1)" asp-route-chartNum="@(Model.ChartNum)">Remove Column</a>
     <a class="btn btn-primary" asp-page="Create" asp-route-chartNum="@(Model.ChartNum)">Add Student</a>
+    <a class="btn btn-primary" asp-page="EditOthers" asp-route-chartNum="@(Model.ChartNum)">Edit Others</a>
     <a class="btn btn-primary" asp-page="DeleteAll" asp-route-chartNum="@(Model.ChartNum)">Delete All</a>
     <a class="btn btn-primary" onclick="saveXML()"> Printer Version</a>
     }
@@ -166,17 +167,17 @@
         <div class="wrapper" id="student-table">  
             @for(int i = 0; i < Model.DisplayNames.Length; i++) {
                 <div class="item">
-                    @{
+                    @* @{
                         var firstInitial = Model.Students.ElementAt(i).FirstName.Length > 0 ? Model.Students.ElementAt(i).FirstName[0].ToString() : "";
                         var middleInitial = Model.Students.ElementAt(i).MiddleName.Length > 0 ? Model.Students.ElementAt(i).MiddleName[0].ToString() : "";
-                    }
+                    } *@
                     <div class="textWrap">
                         <p class="textContent">@Model.DisplayNames[i]</p>
                     </div>
-                    @if(User.Identity.IsAuthenticated){
+                    @if(User.Identity.IsAuthenticated && (Model.Names[i].Type == 0) || (Model.Names[i].Type == 1)){
                     <div class="buttons">
-                        <a href="/Students/Edit/?id=@Model.Students.ElementAt(i).ID&chartNum=@Model.ChartNum" class="gridButton"><i class="fas fa-edit"></i></a>
-                        <a href="/Students/Delete/?id=@Model.Students.ElementAt(i).ID&chartNum=@Model.ChartNum" class="gridButton"><i class="fas fa-trash-alt"></i></a>
+                        <a href="/Students/Edit/?id=@Model.Names[i].ID&chartNum=@Model.ChartNum" class="gridButton"><i class="fas fa-edit"></i></a>
+                        <a href="/Students/Delete/?id=@Model.Names[i].ID&chartNum=@Model.ChartNum" class="gridButton"><i class="fas fa-trash-alt"></i></a>
                     </div>
                     }
                 </div>

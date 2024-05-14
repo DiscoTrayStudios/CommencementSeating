@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using SeatingChart.Data;
 
@@ -10,9 +11,11 @@ using SeatingChart.Data;
 namespace SeatingChart.Migrations
 {
     [DbContext(typeof(ChartContext))]
-    partial class ChartContextModelSnapshot : ModelSnapshot
+    [Migration("20240424195736_IsGrad")]
+    partial class IsGrad
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.3");
@@ -225,29 +228,6 @@ namespace SeatingChart.Migrations
                     b.HasKey("ID");
 
                     b.ToTable("Configuration", (string)null);
-                });
-
-            modelBuilder.Entity("SeatingChart.Models.Other", b =>
-                {
-                    b.Property<int>("ID")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("INTEGER");
-
-                    b.Property<string>("FirstName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("LastName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("MiddleName")
-                        .HasColumnType("TEXT");
-
-                    b.Property<int>("Order")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ID");
-
-                    b.ToTable("Other", (string)null);
                 });
 
             modelBuilder.Entity("SeatingChart.Models.Student", b =>

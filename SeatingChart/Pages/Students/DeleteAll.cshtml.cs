@@ -40,6 +40,7 @@ namespace SeatingChart.Pages.Students
             try
             {
                 _context.Students.RemoveRange(_context.Students);
+                _context.Others.RemoveRange(_context.Others);
                 await _context.SaveChangesAsync();
                 return RedirectToPage("./Index", new {chartNum = ChartNum.ToString()});
             }

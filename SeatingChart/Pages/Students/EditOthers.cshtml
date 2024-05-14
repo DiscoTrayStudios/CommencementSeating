@@ -1,8 +1,8 @@
 @page
-@model SeatingChart.Pages.Students.CreateModel
+@model SeatingChart.Pages.Students.EditOthersModel
 
 @{
-    ViewData["Title"] = "Create";
+    ViewData["Title"] = "Others";
 }
 
 <h1>Adding</h1>
@@ -23,7 +23,8 @@
             <div asp-validation-summary="ModelOnly" class="text-danger"></div>
             <div class="form-group">
                 <label asp-for="namesInput" class="control-label" >Name(s) to add:</label>
-                <textarea asp-for="namesInput" class="form-control" rows="15"></textarea>
+                @Html.TextArea("namesInput", Model.getDisplayString(), new {@class = "form-control", @rows = 15})
+                @* <textarea asp-for="namesInput" class="form-control" rows="15"></textarea> *@
                 <span asp-validation-for="namesInput" class="text-danger"></span>
             </div>
             @* <div class="form-group">
@@ -37,10 +38,6 @@
                 <span asp-validation-for="Student.LastName" class="text-danger"></span>
              </div> *@
             <div class="form-group">
-                <select asp-for="IsGrad">
-                    <option value="0">Undergraduate</option>
-                    <option value="1">Graduate</option>
-                </select>
                 <input type="submit" value="Create" class="btn btn-primary" />
                 <input type="hidden" asp-for="ChartNum" value=@Model.ChartNum />
             </div>
@@ -48,7 +45,7 @@
     </div>
     <div class="col-md-6" id="info">
             <p>
-                Add one or more students in the following format: <br><br> 
+                Add one or more faculty/others in the following format: <br><br> 
                 "First Middle(optional) Last"<br>
                 "First Middle(optional) Last"<br>
                 ...
@@ -56,12 +53,7 @@
                 <br>
                 <br>
 
-                To add reserved seats at the <b>beginning</b> chart,
-                add a student with the format "Reserved #," i.e. "Reserved 1"
-                <br>
-                <br>
-                To add Reserved seats at the <b>end</b> of the chart, add the letter "z", 
-                i.e. "blank z5"
+                
             </p>
         </div>
 </div>

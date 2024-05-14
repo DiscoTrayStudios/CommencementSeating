@@ -8,6 +8,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using SeatingChart;
 using System.ComponentModel;
+using Microsoft.AspNetCore.Razor.Language.Intermediate;
 
 namespace SeatingChart.Pages.Students
 {
@@ -22,55 +23,32 @@ namespace SeatingChart.Pages.Students
             Configuration = configuration;
         }
         public int ChartNum {get;set;}
-        public string NameSort { get; set; }
 
-        public string CurrentFilter { get; set; }
-        public string CurrentSort { get; set; }
 
-        //  public PaginatedList<Student> Students { get; set; } 
+        public List<Student> Undergrads { get; set; }
+        public List<Student> Grads { get; set; }
+        public List<Other> Others { get; set; }
+        public List<Name> Names { get; set; }
 
-        public List<Student> Students { get; set; }
         public String [] DisplayNames { get; set; }
 
         public int numCols { get; set;}
 
-        public async Task OnGetAsync(int chartNum, string sortOrder,
-            string currentFilter, string searchString, int? pageIndex)
+        public async Task OnGetAsync(int chartNum)
         {
             ChartNum = chartNum;
-            Console.WriteLine("ccc");
-            Console.WriteLine(chartNum);
-            CurrentSort = sortOrder;
-            NameSort = String.IsNullOrEmpty(sortOrder) ? "name_desc" : "";
-            if (searchString != null)
-            {
-                pageIndex = 1;
-            }
-            else
-            {
-                searchString = currentFilter;
-            }
 
-            CurrentFilter = searchString;
 
-            IQueryable<Student> studentsIQ = from s in _context.Students
-                                             select s;
-            if (!String.IsNullOrEmpty(searchString))
-            {
-                studentsIQ = studentsIQ.Where(s => s.LastName.Contains(searchString)
-                                       || s.LastName.Contains(searchString));
-            }
-            switch (sortOrder)
-            {
-                case "name_desc":
-                    studentsIQ = studentsIQ.OrderByDescending(s => s.LastName);
-                    break;
-    
-                default:
-                    studentsIQ = studentsIQ.OrderBy(s => s.LastName + " " + s.FirstName + " " + s.MiddleName); 
+            IQueryable<Student> undergradsIQ = (from s in _context.Students
+                                             where !s.isGrad
+                                             select s).OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ThenBy(s => s.MiddleName);
+            IQueryable<Student> gradsIQ = (from s in _context.Students
+                                             where s.isGrad
+                                             select s).OrderBy(s => s.LastName).ThenBy(s => s.FirstName).ThenBy(s => s.MiddleName);
             
-                    break;
-            } 
+            IQueryable<Other> othersIQ = (from o in _context.Others
+                                            select o).OrderBy(o => o.Order);   
+
         
             var conf = from c in _context.Configurations.Where(c => c.ID == ChartNum) select c;
             numCols = 2;
@@ -81,29 +59,77 @@ namespace SeatingChart.Pages.Students
             // var pageSize = Configuration.GetValue("PageSize", 4);
             // Students = await PaginatedList<Student>.CreateAsync(
                 // studentsIQ.AsNoTracking(), pageIndex ?? 1, pageSize);
-            Students = studentsIQ.ToList();
-            DisplayNames = getDisplayNames(Students);
+            Undergrads = undergradsIQ.ToList();
+            Grads = gradsIQ.ToList();
+            Others = othersIQ.ToList();
+            Names = getNames(Undergrads, Grads, Others, numCols);
+            DisplayNames = getDisplayNames(Names);
         }
 
-        private String [] getDisplayNames (List<Student> students){
-            Student [] studs = students.ToArray();
-            Dictionary<String, List<int>> nameDic = new Dictionary<string, List<int>>();
-            // String [] displayNames = new string [studs.Length];
-            String [] displayNames = (from s in studs select s.LastName).ToArray();
-            for (int i = 0; i < studs.Length; i++){
-                if(!nameDic.ContainsKey(studs[i].LastName)){
-                    nameDic.Add(studs[i].LastName, new List<int>());
+        // Method to turn list of grads, undergrads, and others into one array of names
+        private List<Name> getNames(List<Student> underGrads, List<Student> grads, List<Other> others, int cols){
+            List<Name> nameList = new List<Name>();
+            int gradIndex = 0;
+            int otherIndex = 0;
+            // This loop should never run because all grads should fit on the same row, ie. there should be more columns than grads, but it is not necassarily a requirnment
+            for(int i = 0; i < grads.Count - (grads.Count % cols); i++){
+                nameList.Add(new Name(grads[i].FirstName, grads[i].MiddleName, grads[i].LastName, 1, grads[i].ID));
+                gradIndex = i;
+            }
+
+            // put the grad students in the middle of the row with others on either side of them
+            for(int i = 0; i < cols; i++){
+                if(i > (cols - grads.Count)/2 && gradIndex < grads.Count){
+                    nameList.Add(new Name(grads[gradIndex].FirstName, grads[gradIndex].MiddleName, grads[gradIndex].LastName, 1, grads[gradIndex].ID));
+                    gradIndex ++;
                 }
-                nameDic[studs[i].LastName].Add(i);
+                else if(otherIndex < others.Count){
+                    nameList.Add(new Name(others[otherIndex].FirstName, others[otherIndex].MiddleName, others[otherIndex].LastName, 2, others[otherIndex].ID));
+                    otherIndex ++;
+                }
+                else{
+                    nameList.Add(new Name());
+                }
+            }
+
+            // Add all undergrads
+            foreach(Student underGrad in underGrads){
+                nameList.Add(new Name(underGrad.FirstName, underGrad.MiddleName, underGrad.LastName, 0, underGrad.ID));
+            }
+
+            // Fill in the seats on the last row of undergrads with empty names
+            for(int diff = cols - (nameList.Count % cols); diff > 0; diff--){
+                nameList.Add(new Name());
+            }
+
+            // Add the rest of the other names
+            for(; otherIndex < others.Count; otherIndex++){
+                nameList.Add(new Name(others[otherIndex].FirstName, others[otherIndex].MiddleName, others[otherIndex].LastName, 2, others[otherIndex].ID));
+            }
+
+            // Fill in the rest of the chart with empty names
+            for(int diff = cols - (nameList.Count % cols); diff > 0 ; diff--){
+                nameList.Add(new Name());
+            }
+            return nameList;
+        }
+
+        private String [] getDisplayNames (List<Name> nms){
+            Name [] names = nms.ToArray();
+            Dictionary<String, List<int>> nameDic = new Dictionary<string, List<int>>();
+            String [] displayNames = (from s in names select s.LastName).ToArray();
+            for (int i = 0; i < names.Length; i++){
+                if(!nameDic.ContainsKey(names[i].LastName)){
+                    nameDic.Add(names[i].LastName, new List<int>());
+                }
+                nameDic[names[i].LastName].Add(i);
             }
             HashSet<int> c = new HashSet<int>();
-            Console.WriteLine(studs.Length == displayNames.Length);
-            for (int i = 0; i < studs.Length; i++){
-                Console.WriteLine(studs[i].LastName +" , "+displayNames[i]);
+            for (int i = 0; i < names.Length; i++){
                 if(!c.Contains(i)){
                     if(nameDic[displayNames[i]].Count > 1){
-                        DisplayHelper(new Dictionary<String, List<int>>{{displayNames[i] , nameDic[displayNames[i]]}}, displayNames, studs, 0);
-                        foreach(int j in nameDic[studs[i].LastName]){
+                        DisplayHelper(new Dictionary<String, List<int>>{{displayNames[i] , nameDic[displayNames[i]]}}, displayNames, names, 0);
+                        foreach(int j in nameDic[names[i].LastName]){
                             c.Add(j);
                         }
                     }
@@ -111,35 +137,32 @@ namespace SeatingChart.Pages.Students
             }
             return displayNames;
         }
-        private void DisplayHelper (Dictionary<String, List<int>> dispDic, String[] displayNames, Student [] studs, int swch){
+        private void DisplayHelper (Dictionary<String, List<int>> dispDic, String[] displayNames, Name [] names, int swch){
             Dictionary<String, List<int>> newDispDic = new Dictionary<string, List<int>>();
             foreach(String s in dispDic.Keys){
                 foreach(int i in dispDic[s]){
                     switch(swch){
                         case 0:
-                            Console.WriteLine(0);
-                            displayNames[i] = $"{studs[i].FirstName.Substring(0,1)} {displayNames[i]}";
+                            displayNames[i] = names[i].FirstName.Length >0 ? $"{names[i].FirstName.Substring(0,1)} {displayNames[i]}" : "";
                             break;
                         case 1:
-                            Console.WriteLine(1);
-                            if(studs[i].MiddleName != null && studs[i].MiddleName.Length > 0){
-                                displayNames[i] = $"{studs[i].FirstName.Substring(0,1)}.{studs[i].MiddleName.Substring(0,1)}. {studs[i].LastName}";
+                            if(names[i].MiddleName != null && names[i].MiddleName.Length > 0){
+                                displayNames[i] = $"{names[i].FirstName.Substring(0,1)}.{names[i].MiddleName.Substring(0,1)}. {names[i].LastName}";
                             }
                             break;
                         case 2:
-                            if(studs[i].MiddleName != null && studs[i].MiddleName.Length > 0){
-                                displayNames[i] = $"{studs[i].FirstName} {studs[i].MiddleName.Substring(0,1)} {studs[i].LastName}";
+                            if(names[i].MiddleName != null && names[i].MiddleName.Length > 0){
+                                displayNames[i] = $"{names[i].FirstName} {names[i].MiddleName.Substring(0,1)} {names[i].LastName}";
                             }else{
-                                displayNames[i] = $"{studs[i].FirstName} {studs[i].LastName}";
+                                displayNames[i] = $"{names[i].FirstName} {names[i].LastName}";
                             }
                             break;
                         case 3:
-                            if(studs[i].MiddleName != null && studs[i].MiddleName.Length > 0){
-                                displayNames[i] = $"{studs[i].FirstName} {studs[i].MiddleName} {studs[i].LastName}";
+                            if(names[i].MiddleName != null && names[i].MiddleName.Length > 0){
+                                displayNames[i] = $"{names[i].FirstName} {names[i].MiddleName} {names[i].LastName}";
                             }
                             break;
                         default:
-                            Console.WriteLine("Return");
                             return;
                     }
                     if(!newDispDic.ContainsKey(displayNames[i])){
@@ -150,7 +173,6 @@ namespace SeatingChart.Pages.Students
             }
             List<String> toRemove = new List<String>();
             foreach(String s in newDispDic.Keys){
-                Console.WriteLine("ToRemove: " + newDispDic[s].Count);
                 if(!(newDispDic[s].Count > 1)){
                     toRemove.Add(s);
                 }
@@ -159,8 +181,24 @@ namespace SeatingChart.Pages.Students
                 newDispDic.Remove(s);
             }
             if(newDispDic.Keys.Count > 0){
-                DisplayHelper(newDispDic, displayNames, studs, swch + 1);
+                DisplayHelper(newDispDic, displayNames, names, swch + 1);
             }
+        }
+    }
+    public class Name{
+        public String FirstName {get;set;}
+        public String MiddleName {get;set;}
+        public String LastName {get;set;}
+        // Type 0 = Undergrad; Type 1 = Grad; Type 2 = Other
+        public int Type {get;set;}
+        public int ID {get;set;}
+
+        public Name(String FirstName = "", String MiddleName = "", String LastName = "", int Type = 2, int ID = 0){
+            this.FirstName = FirstName;
+            this.MiddleName = MiddleName;
+            this.LastName = LastName;
+            this.Type = Type;
+            this.ID = ID;
         }
     }
 }
